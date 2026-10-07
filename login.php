@@ -170,9 +170,8 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
                         </button>
                     </div>
 
-                    <div class="account-register-prompt">
-
-
+                    <div class="account-register-prompt" style="text-align: center; margin-top: 10px;">
+                        <a href="#" id="forgot-link" style="display: none; font-size: 0.9rem;">Forgot Password?</a>
                     </div>
                 </form>
             </div>
@@ -221,12 +220,57 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
                 </div>
             </dialog>-->
 
+            <!--Forgot password dialog (needs internet: hidden link when offline)-->
+            <dialog id="forgot-diag">
+                <div class="dialog-header">
+                    <h2>Reset Password</h2>
+                </div>
+                <div class="dialog-body">
+                    <p id="fp-msg" class="section-desc" style="margin: 0 0 12px;">A reset code will be sent to the admin email address.</p>
+                    <div id="fp-step1">
+                        <div class="dialog-actions">
+                            <button type="button" class="btn-secondary" command="close" commandfor="forgot-diag">Cancel</button>
+                            <button type="button" class="btn-primary" id="fp-send-btn"><i class="fa-solid fa-paper-plane"></i> Send Code</button>
+                        </div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <a href="#" id="fp-lastresort" style="display: none; font-size: 0.85rem;">Can't access your email?</a>
+                        </div>
+                    </div>
+                    <div id="fp-step2" style="display: none;">
+                        <div class="input-group">
+                            <label for="fp-code"><i class="fa-solid fa-key"></i> 6-digit Code</label>
+                            <input type="text" id="fp-code" placeholder="Enter code" autocomplete="off" maxlength="6" inputmode="numeric">
+                        </div>
+                        <div class="input-group">
+                            <label for="fp-newpass"><i class="fa-solid fa-lock"></i> New Password</label>
+                            <div class="password-wrap">
+                                <input type="password" id="fp-newpass" placeholder="Enter new password" autocomplete="off">
+                                <button type="button" class="toggle-password" id="fp-toggle-new" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="fp-newpass-confirm"><i class="fa-solid fa-lock"></i> Confirm Password</label>
+                            <div class="password-wrap">
+                                <input type="password" id="fp-newpass-confirm" placeholder="Repeat new password" autocomplete="off">
+                                <button type="button" class="toggle-password" id="fp-toggle-confirm" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <div class="dialog-actions">
+                            <button type="button" class="btn-secondary" id="fp-back-btn">Back</button>
+                            <button type="button" class="btn-primary" id="fp-reset-btn"><i class="fa-solid fa-check"></i> Reset Password</button>
+                        </div>
+                        <div class="dialog-actions" id="fp-done-actions" style="display: none; justify-content: center; margin-top: 10px;">
+                            <button type="button" class="btn-primary" command="close" commandfor="forgot-diag">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </dialog>
+
             <!--Dialog feedback-->
             <dialog id="message-diag">
                 <div class="dialog-header">
                     <h2>Notice</h2>
                 </div>
-
                 <div class="dialog-body">
                     <p id="message">Nothing to see here..</p>
                     <div class="dialog-actions" style="justify-content: center;">
@@ -235,7 +279,6 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
                     </div>
                 </div>
             </dialog>
-        </div>
         <!--Login page END-->
         <script>
         // Show/hide password toggle (always present; Edge's native eye is hidden in CSS).
@@ -286,6 +329,140 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
             message.textContent = urlError;
             feedbackdiag.showModal();
         }
+
+        // Forgot password: link exists only while online (reset needs mail).
+        const forgotLink = document.getElementById('forgot-link');
+        const forgotDiag = document.getElementById('forgot-diag');
+        const updateOnline = () => {
+            if (forgotLink) forgotLink.style.display = navigator.onLine ? '' : 'none';
+        };
+        window.addEventListener('online', updateOnline);
+        window.addEventListener('offline', updateOnline);
+        updateOnline();
+        if (forgotLink && forgotDiag) {
+            forgotLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!navigator.onLine) return;
+                document.getElementById('fp-step1').style.display = '';
+                document.getElementById('fp-step2').style.display = 'none';
+                document.getElementById('fp-done-actions').style.display = 'none';
+                document.getElementById('fp-lastresort').style.display = 'none';
+                fpSent = false;
+                document.getElementById('fp-msg').textContent = 'A reset code will be sent to the admin email address.';
+                forgotDiag.showModal();
+            });
+        }
+        // Last-resort is offered only after Send Code was attempted (never first).
+        let fpSent = false;
+        const fpRevealLastResort = () => {
+            fpSent = true;
+            const lr = document.getElementById('fp-lastresort');
+            if (lr) lr.style.display = '';
+        };
+        const fpPost = (data) => fetch('php_backend/password_reset.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(data).toString()
+        }).then(r => r.json());
+        const fpSendBtn = document.getElementById('fp-send-btn');
+        if (fpSendBtn) {
+            fpSendBtn.addEventListener('click', () => {
+                const msg = document.getElementById('fp-msg');
+                // Anti-spam wait: 5s countdown before the request leaves.
+                let left = 5;
+                fpSendBtn.disabled = true;
+                const tick = () => {
+                    if (left > 0) {
+                        fpSendBtn.textContent = 'Wait ' + left + 's...';
+                        left--;
+                        setTimeout(tick, 1000);
+                    } else {
+                        fpSendBtn.textContent = 'Sending...';
+                        msg.textContent = 'Sending code...';
+                        fpPost({ op: 'request' }).then(res => {
+                            fpSendBtn.disabled = false;
+                            fpSendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Code';
+                            fpRevealLastResort();
+                            if (res.ok) {
+                                msg.textContent = res.message;
+                                document.getElementById('fp-step1').style.display = 'none';
+                                document.getElementById('fp-step2').style.display = '';
+                            } else {
+                                msg.textContent = res.error || 'Could not send code.';
+                            }
+                        }).catch(() => {
+                            fpSendBtn.disabled = false;
+                            fpSendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Code';
+                            fpRevealLastResort();
+                            msg.textContent = 'No connection. Connect to the internet and try again.';
+                        });
+                    }
+                };
+                tick();
+            });
+        }
+        const fpResetBtn = document.getElementById('fp-reset-btn');
+        if (fpResetBtn) {
+            fpResetBtn.addEventListener('click', () => {
+                const msg = document.getElementById('fp-msg');
+                const data = {
+                    op: 'verify',
+                    code: document.getElementById('fp-code').value.trim(),
+                    new_password: document.getElementById('fp-newpass').value,
+                    new_password_confirm: document.getElementById('fp-newpass-confirm').value
+                };
+                msg.textContent = 'Verifying...';
+                fpPost(data).then(res => {
+                    msg.textContent = res.ok ? res.message : (res.error || 'Reset failed.');
+                    document.getElementById('fp-step2').style.display = 'none';
+                    document.getElementById('fp-done-actions').style.display = '';
+                }).catch(() => {
+                    msg.textContent = 'No connection. Connect to the internet and try again.';
+                    document.getElementById('fp-done-actions').style.display = '';
+                });
+            });
+        }
+        const fpBackBtn = document.getElementById('fp-back-btn');
+        if (fpBackBtn) {
+            fpBackBtn.addEventListener('click', () => {
+                document.getElementById('fp-step2').style.display = 'none';
+                document.getElementById('fp-done-actions').style.display = 'none';
+                document.getElementById('fp-step1').style.display = '';
+            });
+        }
+        const fpLastResort = document.getElementById('fp-lastresort');
+        if (fpLastResort) {
+            fpLastResort.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!fpSent) return;
+                const msg = document.getElementById('fp-msg');
+                msg.textContent = 'Sending recovery request...';
+                fpPost({ op: 'lastresort' }).then(res => {
+                    msg.textContent = res.ok ? res.message : (res.error || 'Request failed.');
+                }).catch(() => {
+                    msg.textContent = 'No connection. Connect to the internet and try again.';
+                });
+            });
+        }
+        // Show/hide toggles for the reset password fields (same as login).
+        [['fp-newpass', 'fp-toggle-new'], ['fp-newpass-confirm', 'fp-toggle-confirm']].forEach(([inputId, btnId]) => {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            if (input && btn) {
+                btn.addEventListener('click', () => {
+                    const icon = btn.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        if (icon) icon.className = 'fa-solid fa-eye-slash';
+                        btn.setAttribute('aria-label', 'Hide password');
+                    } else {
+                        input.type = 'password';
+                        if (icon) icon.className = 'fa-solid fa-eye';
+                        btn.setAttribute('aria-label', 'Show password');
+                    }
+                });
+            }
+        });
         </script>
 </body>
 

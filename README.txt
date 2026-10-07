@@ -14,6 +14,20 @@ rundll32.exe sysdm.cpl,EditEnvironmentVariables
 Step 3:
 - User variables - Path - Edit - New - Paste "xampp path directory/php" Path - Ok.
 
+- Composer: https://getcomposer.org/download/
+#Needed once for the mail library (password reset). Requires internet once.
+Step 1:
+Install Composer, then restart the terminal.
+Step 2:
+In the project folder, run:
+composer install
+#This creates vendor/ (PHPMailer). vendor/ is git-ignored: every fresh
+#clone must run this once while online. Afterwards the system works offline.
+#Mail also needs: a Gmail App Password in MAIL_PASSWORD inside
+#php_backend/.private/.env (Google Account -> Security -> 2-Step Verification
+#-> App passwords; never the Gmail login password), and the admin email set
+#on the User Management page.
+
 -- Sample Data to import:
 ["2023-10", 25, "2023-11", 20, "2023-12", 50, "2024-01", 21, "2024-02", 17, "2024-03", 30, "2024-04", 17, "2024-05", 25, "2024-06", 23, "2024-07", 24, "2024-08", 15, "2024-09", 45, "2024-10", 19, "2024-11", 20, "2024-12", 21, "2025-01", 18, "2025-02", 14, "2025-03", 10, "2025-04", 8, "2025-05", 9, "2025-06", 11, "2025-07", 18, "2025-08", 12, "2025-09", 17, "2025-10", 19, "2025-11", 21, "2025-12", 18, "2026-01", 20, "2026-02", 12, "2026-03", 6, "2026-04", 7, "2026-05", 10, "2026-06", 11, "2026-07", 10, "2026-08", 7, "2026-09", 8]
 

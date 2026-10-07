@@ -59,9 +59,15 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                             <label for="username">Username</label>
                             <input type="text" id="username" name="username" placeholder="Enter username" required>
                         </div>
+
                         <div class="form-group">
                             <label for="password">Password</label>
                             <input type="password" id="password" name="password" placeholder="Enter password" required>
+                        </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password-confirm">Confirm Password</label>
+                            <input type="password" id="password-confirm" name="password_confirm" placeholder="Repeat password" required>
                         </div>
                     </div>
                     <div class="form-row">
@@ -76,6 +82,8 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                                 <option value="inventory_staff">Inventory Staff</option>
                             </select>
                         </div>
+                    </div>
+
                         <div class="form-group" style="justify-content: flex-end;">
                             <button type="submit" class="btn-primary" style="align-self: flex-start; margin-top: 24px;">Add User</button>
                         </div>
@@ -83,6 +91,38 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                 </form>
             </div>
         </div> <!--Add user END-->
+
+        <?php
+        // Admin's own email for password reset (staff accounts have none -
+        // their passwords are reset by the admin here instead).
+        $adminMailStmt = $pdo->prepare("SELECT id, email FROM accounts WHERE admin = 1 LIMIT 1");
+        $adminMailStmt->execute();
+        $adminMailRow = $adminMailStmt->fetch(PDO::FETCH_ASSOC);
+        ?>
+        <div class="content-card">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-envelope"></i> Admin Email (Password Reset)</h2>
+            </div>
+            <div class="card-body">
+                <p class="section-desc" style="margin: 0 0 12px;">Reset codes go here if the admin forgets their password.
+                    Current: <strong><?= htmlspecialchars($adminMailRow['email'] ?? '—') ?></strong></p>
+                <form method="POST" action="php_backend/editUsers.php">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="admin-email">Email</label>
+                            <input type="email" id="admin-email" name="admin_email" placeholder="Enter admin email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-email-confirm">Confirm Email</label>
+                            <input type="email" id="admin-email-confirm" name="admin_email_confirm" placeholder="Repeat admin email" required>
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px;">
+                        <button type="submit" class="btn-primary"><i class="fa-solid fa-envelope"></i> Save Admin Email</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <div class="content-card systemUsers">
             <div class="card-header card-header-flex">
@@ -205,7 +245,49 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                     </table>
                 </div>
             </div>
-        </div> <!-- System users END-->
+            <div>
+                <details class="dialog-details">
+                    <summary class="summaries">Admin Panel</summary>
+                    <?php $apVerified = isset($_SESSION['ap_verified']) && (time() - (int)$_SESSION['ap_verified']) < 300; ?>
+                    <?php if (!$apVerified): ?>
+                    <form method="POST" action="php_backend/editUsers.php" style="margin-top: 8px;">
+                        <div class="form-group">
+                            <label for="admin-current">Current admin password</label>
+                            <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
+                                <input type="password" id="admin-current" name="admin_verify" placeholder="Enter current password" autocomplete="off" required style="flex:1;">
+                                <button type="button" class="btn-secondary" id="admin-current-toggle" style="padding:8px 12px;" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <button type="submit" class="btn-primary"><i class="fa-solid fa-key"></i> Change Password</button>
+                        </div>
+                    </form>
+                    <?php else: ?>
+                    <form method="POST" action="php_backend/editUsers.php" style="margin-top: 8px;">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="ap-new">New Password</label>
+                            <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
+                                <input type="password" id="ap-new" name="admin_new" placeholder="Enter new password" minlength="8" required style="flex:1;">
+                                <button type="button" class="btn-secondary" id="ap-toggle-new" style="padding:8px 12px;" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="ap-confirm">Confirm Password</label>
+                            <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
+                                <input type="password" id="ap-confirm" name="admin_new_confirm" placeholder="Repeat new password" minlength="8" required style="flex:1;">
+                                <button type="button" class="btn-secondary" id="ap-toggle-confirm" style="padding:8px 12px;" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <div class="dialog-actions">
+                            <button type="submit" class="btn-primary" name="admin_save" value="1"><i class="fa-solid fa-check"></i> Save Password</button>
+                            <button type="submit" class="btn-secondary" name="ap_cancel" value="1" formnovalidate>Cancel</button>
+                        </div>
+                    </form>
+                    <?php endif; ?>
+                </details>
+            </div>
+        </div> 
+        <!-- System users END-->
 
         <!-- User Details + password reset dialog -->
         <dialog id="user-diag">
@@ -234,8 +316,14 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                     <div class="form-group" style="margin-bottom: 12px;">
                         <label for="ud-password">Change password</label>
                         <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
-                            <input type="password" id="ud-password" name="new_password" placeholder="Enter new password" minlength="4" required style="flex:1;">
+                            <input type="password" id="ud-password" name="new_password" placeholder="Enter new password" minlength="8" required style="flex:1;">
                             <button type="button" class="btn-secondary" id="ud-toggle" style="padding:8px 12px;" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="ud-password-confirm">Confirm password</label>
+                        <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
+                            <input type="password" id="ud-password-confirm" name="new_password_confirm" placeholder="Repeat new password" minlength="8" required style="flex:1;">
                         </div>
                     </div>
                     <div class="dialog-actions">
@@ -272,6 +360,25 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
             } else {
                 pw.type = 'password';
                 icon.className = 'fa-solid fa-eye';
+            }
+        });
+        // Show/hide toggles for the admin password fields.
+        [['admin-current', 'admin-current-toggle'], ['ap-new', 'ap-toggle-new'], ['ap-confirm', 'ap-toggle-confirm']].forEach(([inputId, btnId]) => {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            if (input && btn) {
+                btn.addEventListener('click', () => {
+                    const icon = btn.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        if (icon) icon.className = 'fa-solid fa-eye-slash';
+                        btn.setAttribute('aria-label', 'Hide password');
+                    } else {
+                        input.type = 'password';
+                        if (icon) icon.className = 'fa-solid fa-eye';
+                        btn.setAttribute('aria-label', 'Show password');
+                    }
+                });
             }
         });
     });
