@@ -414,7 +414,11 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
                 msg.textContent = 'Verifying...';
                 fpPost(data).then(res => {
                     msg.textContent = res.ok ? res.message : (res.error || 'Reset failed.');
-                    document.getElementById('fp-step2').style.display = 'none';
+                    // Success closes the form; failures keep it open so a typo
+                    // can be fixed and retried without requesting a new code.
+                    if (res.ok) {
+                        document.getElementById('fp-step2').style.display = 'none';
+                    }
                     document.getElementById('fp-done-actions').style.display = '';
                 }).catch(() => {
                     msg.textContent = 'No connection. Connect to the internet and try again.';

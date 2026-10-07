@@ -104,9 +104,6 @@ function verifyCode($pdo, $acct, $ip) {
     if ($msg = passwordStandardError($newPass)) {
         fail($msg);
     }
-    if ($newPass !== $newPassConfirm) {
-        fail("Passwords do not match.");
-    }
     $stmt = $pdo->prepare("SELECT id, token_hash, expires_at, ip, attempts FROM password_resets WHERE user = :u AND used = 0 ORDER BY id DESC LIMIT 1");
     $stmt->execute([':u' => $username]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -117,13 +114,28 @@ function verifyCode($pdo, $acct, $ip) {
         $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = :id")->execute([':id' => $row['id']]);
         fail("Code expired. Request a new one.");
     }
+    // Every failed attempt counts - wrong codes AND mismatched passwords.
+    // The code locks at 5 and must be re-requested.
+    $burnAttempt = function () use ($pdo, $row) {
+        $left = 5 - ((int)$row['attempts'] + 1);
+        $pdo->prepare("UPDATE password_resets SET attempts = attempts + 1 WHERE id = :id")->execute([':id' => $row['id']]);
+        if ($left <= 0) {
+            $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = :id")->execute([':id' => $row['id']]);
+            fail("Too many wrong attempts. Request a new code.");
+        }
+        return $left;
+    };
     if ((int)$row['attempts'] >= 5) {
         $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = :id")->execute([':id' => $row['id']]);
         fail("Too many wrong attempts. Request a new code.");
     }
+    if ($newPass !== $newPassConfirm) {
+        $left = $burnAttempt();
+        fail("Passwords do not match. $left attempt(s) left.");
+    }
     if (!password_verify($code, $row['token_hash'])) {
-        $pdo->prepare("UPDATE password_resets SET attempts = attempts + 1 WHERE id = :id")->execute([':id' => $row['id']]);
-        fail("Wrong code.");
+        $left = $burnAttempt();
+        fail("Wrong code. $left attempt(s) left.");
     }
     if (($row['ip'] ?? '') !== $ip) {
         fail("Code was requested from a different network. Request a new code from this device.");
