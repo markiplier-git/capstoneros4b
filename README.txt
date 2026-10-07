@@ -15,7 +15,7 @@ Step 3:
 - User variables - Path - Edit - New - Paste "xampp path directory/php" Path - Ok.
 
 -- Sample Data to import:
-["2023-10", 25, "2023-11", 20, "2023-12", 50, "2024-01", 21, "2024-02", 17, "2024-03", 30, "2024-04", 17, "2024-05", 25, "2024-06", 23, "2024-07", 24, "2024-08", 15, "2024-09", 45, "2024-10", 19, "2024-11", 20, "2024-12", 21, "2025-01", 18, "2025-02", 14, "2025-03", 10, "2025-04", 8, "2025-05", 9, "2025-06", 11, "2025-07", 18, "2025-08", 12, "2025-09", 17, "2025-10", 19, "2025-11", 21, "2025-12", 18, "2026-01", 20, "2026-02", 12, "2026-03", 6, "2026-04", 7, "2026-05", 10, "2026-06", 11, "2026-07", 15, "2026-08", 5, "2026-09", 25]
+["2023-10", 25, "2023-11", 20, "2023-12", 50, "2024-01", 21, "2024-02", 17, "2024-03", 30, "2024-04", 17, "2024-05", 25, "2024-06", 23, "2024-07", 24, "2024-08", 15, "2024-09", 45, "2024-10", 19, "2024-11", 20, "2024-12", 21, "2025-01", 18, "2025-02", 14, "2025-03", 10, "2025-04", 8, "2025-05", 9, "2025-06", 11, "2025-07", 18, "2025-08", 12, "2025-09", 17, "2025-10", 19, "2025-11", 21, "2025-12", 18, "2026-01", 20, "2026-02", 12, "2026-03", 6, "2026-04", 7, "2026-05", 10, "2026-06", 11, "2026-07", 10, "2026-08", 7, "2026-09", 8]
 
 =======================================
 ------------- DATABASE ----------------
@@ -31,6 +31,7 @@ CREATE TABLE accounts (
     role VARCHAR(30),
     user VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(100),
+    email VARCHAR(255) NULL,
     pass VARCHAR(255),
     admin BOOLEAN UNIQUE DEFAULT NULL,
     status ENUM('active', 'disabled') NOT NULL DEFAULT 'active'
@@ -101,6 +102,17 @@ CREATE TABLE IF NOT EXISTS stock_daily (
     total_stock DECIMAL(10,2) NOT NULL DEFAULT 0.00
 );
 
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user VARCHAR(50) NOT NULL,
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    ip VARCHAR(45) NOT NULL,
+    attempts INT NOT NULL DEFAULT 0,
+    used TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
 -- Indexes for the queries the system actually runs:
 CREATE INDEX idx_inventory_status ON inventory(status);
 CREATE INDEX idx_inventory_updated ON inventory(updated_at);
@@ -109,5 +121,6 @@ CREATE INDEX idx_production_status ON production(status);
 CREATE INDEX idx_production_updated ON production(updated_at);
 CREATE UNIQUE INDEX uq_production_batch ON production(batch_id);
 CREATE INDEX idx_history_created ON history(created_at);
+CREATE INDEX idx_password_resets_user ON password_resets(user);
 CREATE INDEX idx_forecasting_history_created ON forecasting_history(created_at);
 CREATE INDEX idx_accounts_user ON accounts(user);
