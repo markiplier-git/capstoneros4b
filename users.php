@@ -284,13 +284,13 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="admin-email">Email</label>
-                                            <input type="email" id="admin-email" name="admin_email" placeholder="Enter admin email"
+                                            <input type="email" id="admin-email" name="admin_email" placeholder="Enter admin email" 
                                                 required>
                                         </div>
                                         <div class="form-group">
                                             <label for="admin-email-confirm">Confirm Email</label>
                                             <input type="email" id="admin-email-confirm" name="admin_email_confirm"
-                                                placeholder="Repeat admin email" required>
+                                                placeholder="Repeat admin email" autocomplete="off" required>
                                         </div>
                                     </div>
                                     <div style="margin-top: 12px;">
