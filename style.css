@@ -229,7 +229,12 @@ every .search-bar form (inventory, production, sales, users, history, reports).
 /* Dialogs START */
 dialog#register-diag,
 dialog#message-diag,
-dialog#feedback-diag {
+dialog#feedback-diag,
+dialog#forgot-diag,
+dialog#user-diag,
+dialog#item-diag,
+dialog#add-diag,
+dialog#status-diag {
     padding: 0;
     border: none;
     border-radius: 12px;
@@ -287,6 +292,24 @@ dialog .dialog-actions {
     color: #334155;
     margin: 0 0 20px;
     font-weight: 500;
+}
+
+/* Forgot-password dialog follows the same centered theme as message-diag.
+   .form-group keeps its own left-aligned labels/inputs inside. */
+#forgot-diag .dialog-body {
+    padding: 24px;
+    text-align: center;
+}
+
+#forgot-diag #fp-msg {
+    font-size: 15px;
+    color: #334155;
+    margin: 0 0 20px;
+    font-weight: 500;
+}
+
+#forgot-diag .dialog-actions {
+    justify-content: center;
 }
 
 /* Dialogs END */

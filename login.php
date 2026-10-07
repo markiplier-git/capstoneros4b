@@ -212,10 +212,10 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
             <!--Forgot password dialog (needs internet: hidden link when offline)-->
             <dialog id="forgot-diag">
                 <div class="dialog-header">
-                    <h2>Reset Password</h2>
+                    <h2><i class="fa-solid fa-key"></i> Reset Password</h2>
                 </div>
                 <div class="dialog-body">
-                    <p id="fp-msg" class="section-desc" style="margin: 0 0 12px;">A reset code will be sent to the admin email address.</p>
+                    <p id="fp-msg" class="section-desc">A reset code will be sent to the admin email address.</p>
                     <div id="fp-step1">
                         <div class="dialog-actions">
                             <button type="button" class="btn-secondary" command="close" commandfor="forgot-diag">Cancel</button>
@@ -248,9 +248,9 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
                             <button type="button" class="btn-secondary" id="fp-back-btn">Back</button>
                             <button type="button" class="btn-primary" id="fp-reset-btn"><i class="fa-solid fa-check"></i> Reset Password</button>
                         </div>
-                        <div class="dialog-actions" id="fp-done-actions" style="display: none; justify-content: center; margin-top: 10px;">
-                            <button type="button" class="btn-primary" command="close" commandfor="forgot-diag">Close</button>
-                        </div>
+                    </div>
+                    <div class="dialog-actions" id="fp-done-actions" style="display: none; justify-content: center; margin-top: 10px;">
+                        <button type="button" class="btn-primary" command="close" commandfor="forgot-diag">Close</button>
                     </div>
                 </div>
             </dialog>
