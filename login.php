@@ -82,18 +82,49 @@ if ((isset($_POST['rusername'])) && (isset($_POST['rpassword'])) && $_SERVER['RE
 }
 
 # PHP Login
+# Anti-spam: failures are logged per username+IP in login_attempts. Five
+# failures inside 5 minutes locks further tries until the window passes.
+# A successful login clears that pair's count. The table may not exist on
+# old DBs yet - login must never fatal, so misses fall back to no limit.
 if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQUEST_METHOD'] == "POST") {
-    // Use #PDO, htmlspecialchars, trim?, 
+    // Use #PDO, htmlspecialchars, trim?,
     $user = trim($_POST['username']);
     $pass = trim($_POST['password']);
+    $loginIp = $_SERVER['REMOTE_ADDR'] ?? '';
 
     require_once "php_backend/db.php";
+
+    $loginFails = 0;
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*), MAX(created_at) FROM login_attempts WHERE user = :username AND ip = :ip AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
+        $stmt->execute([':username' => $user, ':ip' => $loginIp]);
+        $loginRow = $stmt->fetch(PDO::FETCH_NUM);
+        $loginFails = (int)($loginRow[0] ?? 0);
+        $loginLast = $loginRow[1] ?? null;
+    } catch (Exception $e) {
+        $loginFails = 0;
+        $loginLast = null;
+    }
+    if ($loginFails >= 5) {
+        $loginWait = $loginLast ? max(1, 300 - (time() - strtotime($loginLast))) : 300;
+        header("Location: login.php?error=" . urlencode("Too many failed attempts. Try again in $loginWait second(s)."));
+        exit;
+    }
+    $loginFail = function () use ($pdo, $user, $loginIp) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO login_attempts (user, ip) VALUES (:username, :ip)");
+            $stmt->execute([':username' => $user, ':ip' => $loginIp]);
+        } catch (Exception $e) {
+            // Table missing - login continues unthrottled.
+        }
+    };
 
     # Check if user exists first
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM accounts WHERE user = :username");
     $stmt->execute([':username' => $user]);
     $count = $stmt->fetchColumn();
     if ($count !=1) {
+        $loginFail();
         header("Location: login.php?error=" . urlencode("Username not found!"));
         exit;
     }
@@ -107,6 +138,12 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
 
     # Verify the password
     if(password_verify($pass, $password)) {
+        try {
+            $stmt = $pdo->prepare("DELETE FROM login_attempts WHERE user = :username AND ip = :ip");
+            $stmt->execute([':username' => $user, ':ip' => $loginIp]);
+        } catch (Exception $e) {
+            // Table missing - nothing to clear.
+        }
         session_start();
         session_regenerate_id(true);
         # Use the username, id, role in session.
@@ -116,6 +153,7 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
         header("Location: index.php");         
         exit;
     } else {
+        $loginFail();
         header("Location: login.php?error=" . urlencode("Password is incorrect!"));
         exit;
     }
@@ -237,18 +275,18 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
                         </div>
                     </div>
                     <div id="fp-step2" style="display: none;">
-                        <div class="input-group">
+                        <div class="form-group" style="margin-bottom: 12px;">
                             <label for="fp-code"><i class="fa-solid fa-key"></i> 6-digit Code</label>
-                            <input type="text" id="fp-code" placeholder="Enter code" autocomplete="off" maxlength="6" inputmode="numeric">
+                            <input type="text" id="fp-code" placeholder="Enter code" autocomplete="off" maxlength="6" inputmode="numeric" style="width: 100%;">
                         </div>
-                        <div class="input-group">
+                        <div class="form-group" style="margin-bottom: 12px;">
                             <label for="fp-newpass"><i class="fa-solid fa-lock"></i> New Password</label>
                             <div class="password-wrap">
                                 <input type="password" id="fp-newpass" placeholder="Enter new password" autocomplete="off">
                                 <button type="button" class="toggle-password" id="fp-toggle-new" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
                             </div>
                         </div>
-                        <div class="input-group">
+                        <div class="form-group" style="margin-bottom: 12px;">
                             <label for="fp-newpass-confirm"><i class="fa-solid fa-lock"></i> Confirm Password</label>
                             <div class="password-wrap">
                                 <input type="password" id="fp-newpass-confirm" placeholder="Repeat new password" autocomplete="off">

@@ -127,6 +127,13 @@ CREATE TABLE IF NOT EXISTS password_resets (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user VARCHAR(50) NOT NULL,
+    ip VARCHAR(45) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
 -- Indexes for the queries the system actually runs:
 CREATE INDEX idx_inventory_status ON inventory(status);
 CREATE INDEX idx_inventory_updated ON inventory(updated_at);
@@ -136,5 +143,6 @@ CREATE INDEX idx_production_updated ON production(updated_at);
 CREATE UNIQUE INDEX uq_production_batch ON production(batch_id);
 CREATE INDEX idx_history_created ON history(created_at);
 CREATE INDEX idx_password_resets_user ON password_resets(user);
+CREATE INDEX idx_login_attempts_user ON login_attempts(user);
 CREATE INDEX idx_forecasting_history_created ON forecasting_history(created_at);
 CREATE INDEX idx_accounts_user ON accounts(user);

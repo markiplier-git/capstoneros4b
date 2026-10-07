@@ -59,12 +59,16 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                             <label for="username">Username</label>
                             <input type="text" id="username" name="username" placeholder="Enter username" required>
                         </div>
-
+                        <div class="form-group">
+                            <label for="fullname">Name</label>
+                            <input type="text" id="fullname" name="fullname" placeholder="Enter full name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="password">Password</label>
                             <input type="password" id="password" name="password" placeholder="Enter password" required>
                         </div>
-                    <div class="form-row">
                         <div class="form-group">
                             <label for="password-confirm">Confirm Password</label>
                             <input type="password" id="password-confirm" name="password_confirm" placeholder="Repeat password" required>
@@ -72,18 +76,12 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="fullname">Name</label>
-                            <input type="text" id="fullname" name="fullname" placeholder="Enter full name" required>
-                        </div>
-                        <div class="form-group">
                             <label for="role">Role</label>
                             <select id="role" name="role" required>
                                 <option value="production_staff">Production Staff</option>
                                 <option value="inventory_staff">Inventory Staff</option>
                             </select>
                         </div>
-                    </div>
-
                         <div class="form-group" style="justify-content: flex-end;">
                             <button type="submit" class="btn-primary" style="align-self: flex-start; margin-top: 24px;">Add User</button>
                         </div>

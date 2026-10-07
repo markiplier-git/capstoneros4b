@@ -787,8 +787,8 @@ function updateDeductLimit(unit) {
             </div>
         </div> <!-- Card 1 END -->
 
-        <!-- Card 2: Transactions -->
-        <?php if ($prod): ?>
+        <!-- Card 2: Transactions (always shown - a fresh/empty inventory
+             still needs Add Total Stock to bootstrap the ledger) -->
             <div class="content-card">
                 <div class="card-header">
                     <h2><i class="fa-solid fa-circle-plus"></i>Transactions</h2>
@@ -796,14 +796,13 @@ function updateDeductLimit(unit) {
                 <div class="card-body">
                     <p class="section-desc">Deduct from or add to the total stock.</p>
                     <button type="button" class="btn-primary" command="show-modal" commandfor="item-diag">
-                        <i class="fa-solid fa-pen-to-square"></i> Edit Total Stock
+                        <i class="fa-solid fa-pen-to-square"></i> Deduct Total Stock
                     </button>
                     <button type="button" class="btn-primary" command="show-modal" commandfor="add-diag" style="margin-left: 8px;">
                         <i class="fa-solid fa-plus"></i> Add Total Stock
                     </button>
                 </div>
             </div>
-        <?php endif; ?>
        <div class="content-card">
             <div class="card-header">
                 <h2><i class="fa-solid fa-arrow"></i> Recent Inventory Movements</h2>
