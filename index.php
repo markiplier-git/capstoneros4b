@@ -106,7 +106,7 @@ $goalData = array_fill(0, count($chartData), $salesGoal);
         } elseif ($current_vermicast <= 0) {
             $notifClass = 'notif-danger';
             $notifIcon = 'fa-circle-xmark';
-            $notifText = "No stocks! Safety stock is {$salesGoal} Sacks.";
+            $notifText = "No stocks! Safety stock is {$salesGoal}";
         } elseif ($current_vermicast <= 5) {
             $notifClass = 'notif-red';
             $notifIcon = 'fa-triangle-exclamation';
@@ -116,10 +116,16 @@ $goalData = array_fill(0, count($chartData), $salesGoal);
             $notifIcon = 'fa-triangle-exclamation';
             $notifText = "Warning: stock ({$vermiFmt} Sacks) is under the safety stock ({$salesGoal})";
         }
+        // Low bands carry action links (same as inventory.php): Produce goes
+        // to production, Add jumps to the Transactions card. Healthy hides them.
+        $notifLinks = '';
+        if ($notifClass !== 'notif-green') {
+            $notifLinks = ' <a href="production.php">Produce</a>, <a href="inventory.php#transactions">Add</a>';
+        }
         ?>
         <h2 id="dashboard-notif" class="notif <?= $notifClass ?>">
             <i class="fa-solid <?= $notifIcon ?>"></i>
-            <span><?= htmlspecialchars($notifText) ?></span>
+            <span><?= htmlspecialchars($notifText) ?><?= $notifLinks ?></span>
         </h2>
 
         <?php if (isset($_GET['success'])): ?>
@@ -167,6 +173,7 @@ $goalData = array_fill(0, count($chartData), $salesGoal);
                     <h3><?= htmlspecialchars($salesGoal) ?> Sacks</h3>
                     <?php if (in_array($userRole, ['admin', 'inventory_staff'])): ?>
                     <form method="POST" action="php_backend/setGoal.php">
+                        <?= csrf_field() ?>
                         <input type="number" id="sales_goal" name="sales_goal" min="0" max="1000000"
                             value="<?= htmlspecialchars($salesGoal) ?>" style="width:100px;">
                         <button type="submit" class="btn-primary">Save Goal</button>

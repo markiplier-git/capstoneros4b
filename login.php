@@ -1,6 +1,7 @@
 <?php
 # PHP register
 require_once "php_backend/db.php";
+require_once "php_backend/csrf.php";
 $stmt = $pdo->prepare("SELECT COUNT(*) FROM accounts WHERE admin = :adminbool");
 $stmt->execute(['adminbool' => 1]);
 $count = $stmt->fetchColumn();
@@ -23,64 +24,8 @@ if($count == 0) {
         $stmt->execute(['role' => 'admin', 'user' => $myUser, 'name'=> $myName, 'pass' => password_hash($myPassword, PASSWORD_ARGON2ID), 'admin' => 1]);
     }
 }
-if ((isset($_POST['rusername'])) && (isset($_POST['rpassword'])) && $_SERVER['REQUEST_METHOD'] == "POST") {
-    # init fetch    
-    $username = trim($_POST['rusername']);
-    $password = trim($_POST['rpassword']);
-    $role = trim($_POST['role']);
-
-
-    # Check if role is valid
-    if (!in_array($role, ['admin', 'production_staff', 'inventory_staff'])) {
-        header("Location: login.php?error=" . urlencode("Role is invalid"));
-        exit;
-    }
-
-    #Check if admin role:
-    if($role=="admin") {
-        $stmt = $pdo->prepare("SELECT admin FROM accounts WHERE admin = :adminbool");
-        $stmt->execute(['adminbool' => true]);
-        $result = $stmt->fetch();
-        if($result) #if true.
-        {
-            header("Location: login.php?error=" . urlencode("Only one admin is allowed!"));
-            exit;
-        }
-        $is_admin = true;
-    }
-
-    
-    # Check if user exists already
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM accounts WHERE user  = :username");
-    $stmt->execute([':username' => $username]);
-    $count = $stmt->fetchColumn();
-
-    if ($count > 0) {
-        header("Location: login.php?error=" . urlencode("Username already exists!"));
-        exit;
-    }
-
-    # Hashing password
-    $hashedpassword = password_hash($password, PASSWORD_ARGON2ID);
-
-    # Register user with exception
-    try {
-        $stmt = $pdo->prepare("INSERT INTO accounts (role, user, pass, admin) VALUES (:roles, :username, :hashedpassword, :administ)");
-    } catch (Throwable $e) {
-        header("Location: login.php?error=" . urlencode("Something went wrong: " . $e->getMessage()));
-        exit;
-    }
-    $stmt->bindValue(':roles', $role);
-    $stmt->bindValue(':username', $username);
-    $stmt->bindValue(':hashedpassword', $hashedpassword);
-    $stmt->bindValue(':administ', $is_admin);
-    if ($stmt->execute()) {
-        $stmt = null;
-        header("Location: login.php?registered=1");
-        exit;
-    }
-}
-
+# NOTE: public self-registration was removed (open account creation with
+# no auth). New users are created only by the admin on users.php.
 # PHP Login
 # Anti-spam: failures are logged per username+IP in login_attempts. Five
 # failures inside 5 minutes locks further tries until the window passes.
@@ -93,6 +38,8 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
     $loginIp = $_SERVER['REMOTE_ADDR'] ?? '';
 
     require_once "php_backend/db.php";
+
+    csrf_check();
 
     $loginFails = 0;
     try {
@@ -146,6 +93,9 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
         }
         session_start();
         session_regenerate_id(true);
+        # Fresh session lifetime + token on login.
+        $_SESSION['created_at'] = time();
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         # Use the username, id, role in session.
         $_SESSION['user_id'] = $row['id'];
         $_SESSION['user_name'] = $user;
@@ -187,6 +137,7 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
             <!--Card Body-->
             <div class="login-card-body">
                 <form method="POST" class="login-form">
+                    <?= csrf_field() ?>
                     <div class="input-group">
                         <label for="username"><i class="fa-solid fa-user"></i> Username</label>
                         <input type="text" id="username" name="username" placeholder="Enter username" autocomplete="off"
@@ -400,7 +351,7 @@ if ((isset($_POST['username'])) && (isset($_POST['password'])) && $_SERVER['REQU
         const fpPost = (data) => fetch('php_backend/password_reset.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams(data).toString()
+            body: new URLSearchParams({ ...data, csrf_token: <?= json_encode(csrf_token()) ?> }).toString()
         }).then(r => r.json());
         const fpSendBtn = document.getElementById('fp-send-btn');
         if (fpSendBtn) {

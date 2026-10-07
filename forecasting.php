@@ -41,6 +41,7 @@ $thinNotice = false;
 // (even a forged POST can't trigger one - the generate branch is closed).
 $isStaffView = ($_SESSION['user_role'] ?? '') === 'production_staff';
 if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['generate']) && !$isStaffView) {
+    csrf_check();
     $res = runForecast($pdo, $selProduct);
     $forecast = $res['forecast'];
     $method = $res['method'];
@@ -118,6 +119,7 @@ if ($forecast === null) {
             </div>
             <div class="card-body">
                 <form method="POST" action="forecasting.php">
+                    <?= csrf_field() ?>
                     <div class="form-group" style="margin-bottom: 12px;">
                         <label for="product">Fertilizer Type</label>
                         <select id="product" name="product" required>

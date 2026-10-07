@@ -142,6 +142,7 @@ if ($chGran === 'weekly') {
     <div class="dialog-body">
 
         <form method="POST" action="php_backend/insertItem.php">
+            <?= csrf_field() ?>
 
             <div class="form-group" style="margin-bottom: 12px;">
 
@@ -292,6 +293,7 @@ function updateDeductLimit(unit) {
     </div>
     <div class="dialog-body">
         <form method="POST" action="php_backend/insertItem.php">
+            <?= csrf_field() ?>
             <input type="hidden" name="direction" value="add">
             <div class="form-group" style="margin-bottom: 12px;">
                 <div style="margin-bottom: 8px;">
@@ -389,10 +391,16 @@ function updateDeductLimit(unit) {
             $notifIcon = 'fa-triangle-exclamation';
             $notifText = "Warning: stock ({$totalFmt} Sacks) is under the safety stock ({$salesGoalInv})";
         }
+        // Low bands carry action links: Produce -> production page, Add ->
+        // this page scrolled to the Transactions card. Healthy hides them.
+        $notifLinks = '';
+        if ($notifClass !== 'notif-green') {
+            $notifLinks = ' <a href="production.php">Produce</a>, <a href="inventory.php#transactions">Add</a>';
+        }
         ?>
         <h2 id="notif" class="notif <?= $notifClass ?>">
             <i class="fa-solid <?= $notifIcon ?>"></i>
-            <span><?= htmlspecialchars($notifText) ?></span>
+            <span><?= htmlspecialchars($notifText) ?><?= $notifLinks ?></span>
         </h2>
 
        <!--Inventory head Summary-->
@@ -638,9 +646,11 @@ function updateDeductLimit(unit) {
 
                             <?php
                             require_once "php_backend/db.php";
-                            // Fetch the search var value.
-                            $searchInv = trim($_GET['search-inv'] ?? '');
-                            $searchInv = "%{$searchInv}%";
+                            // Fetch the search var value. Keep the raw text apart
+                            // from the LIKE pattern: wrapping first makes every
+                            // later emptiness check ("%%" !== '') always true.
+                            $searchInvRaw = trim($_GET['search-inv'] ?? '');
+                            $searchInv = "%{$searchInvRaw}%";
                             $dateOpts = $pdo->prepare("SELECT DISTINCT DATE(created_at) AS d FROM inventory WHERE status != 'Completed' AND (CAST(prod_id AS CHAR) LIKE :search OR product LIKE :search) ORDER BY d DESC");
                             $dateOpts->bindValue(':search', $searchInv);
                             $dateOpts->execute();
@@ -697,7 +707,7 @@ function updateDeductLimit(unit) {
                                 <option value="lowest" <?= $currentSort === 'lowest' ? 'selected' : '' ?>>Lowest
                                     quantity</option>
                             </select>
-                            <?php if ($searchInv !== '' || $currentDate !== 'all' || $currentMonth !== 'all' || $currentYear !== 'all' || $currentSort !== 'newest'): ?>
+                            <?php if ($searchInvRaw !== '' || $currentDate !== 'all' || $currentMonth !== 'all' || $currentYear !== 'all' || $currentSort !== 'newest'): ?>
                                 <a href="inventory.php<?= ($searchHistory !== '' || $historyDate !== 'all') ? '?search-history=' . urlencode($searchHistory) . '&history-date=' . urlencode($historyDate) : '' ?>"
                                     class="btn-secondary" style="text-decoration:none;">Clear</a>
                             <?php endif; ?>
@@ -719,9 +729,9 @@ function updateDeductLimit(unit) {
                     <?php
                     $currentSql = "SELECT * FROM inventory WHERE status != 'Completed'";
                     $currentParams = [];
-                    if ($searchInv !== '') {
+                    if ($searchInvRaw !== '') {
                         $currentSql .= " AND (CAST(prod_id AS CHAR) LIKE :search OR product LIKE :search OR description LIKE :search OR unit LIKE :search)";
-                        $currentParams[':search'] = "%" . $searchInv . "%";
+                        $currentParams[':search'] = "%" . $searchInvRaw . "%";
                     }
                     if ($currentDate !== 'all') {
                         $currentSql .= " AND DATE(created_at) = :cdate";
@@ -766,7 +776,7 @@ function updateDeductLimit(unit) {
                                     echo "<tr><td colspan='6'>Search query not found!</td></tr>";
                                 }
                                 if (!$invError && empty($invRows)):
-                                    echo "<tr><td colspan='6'>" . ($searchInv !== '' ? "No items match '" . htmlspecialchars($searchInv) . "'." : "No current supplies found.") . "</td></tr>";
+                                    echo "<tr><td colspan='6'>" . ($searchInvRaw !== '' ? "No item found for '" . htmlspecialchars($searchInvRaw) . "'." : "No search query.") . "</td></tr>";
                                 endif;
                                 foreach ($invRows as $row):
                                     ?>
@@ -789,7 +799,7 @@ function updateDeductLimit(unit) {
 
         <!-- Card 2: Transactions (always shown - a fresh/empty inventory
              still needs Add Total Stock to bootstrap the ledger) -->
-            <div class="content-card">
+            <div class="content-card" id="transactions">
                 <div class="card-header">
                     <h2><i class="fa-solid fa-circle-plus"></i>Transactions</h2>
                 </div>

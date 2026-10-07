@@ -2,6 +2,7 @@
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['item'])) {
     require_once "session.php";
     requireRole(['admin', 'production_staff']);
+    csrf_check();
 
     $item = trim($_POST['item']);
     $unit = trim($_POST['unit'] ?? 'Sacks');
@@ -48,59 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['item'])) {
     echo "Invalid Data";
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['status_id'])) {
-    require_once "session.php";
-    requireRole(['admin', 'production_staff']);
-    $id = $_GET['id'];
-    $batch = $_GET['batch'];
-    $date = $_GET['date'];
-    $item = $_GET['item'];
-    $quantity = $_GET['quantity'];
-    $unit = $_GET['unit'];
-    $status = $_GET['status_id'];
-    
-# Auto insert if completed instead. 
-# prod_id	product	quantity	unit	status	description	created_at	updated_at	
-    if ($status == 'Completed') {
-        // Independent Item ID (never the production/batch id); batch link
-        // goes in description, same as updateBatch.php.
-        $inv_prod = null;
-        for ($t = 0; $t < 10; $t++) {
-            $cand = (string)random_int(1000000, 9999999);
-            $stmt_id = $pdo->prepare("SELECT prod_id FROM inventory WHERE prod_id = :id");
-            $stmt_id->bindValue(':id', $cand);
-            $stmt_id->execute();
-            if (!$stmt_id->fetchColumn()) {
-                $inv_prod = $cand;
-                break;
-            }
-        }
-        if ($inv_prod === null) {
-            $inv_prod = 'I' . date('ymdHis') . sprintf('%02d', random_int(0, 99));
-        }
-        $stmt_inventory = $pdo->prepare("INSERT INTO inventory (prod_id, product, quantity, unit, description) VALUES (:prod_id, :product, :quantity, :unit, :description)");
-        $stmt_inventory->bindValue(':prod_id', $inv_prod);
-        $stmt_inventory->bindValue(':product', $item);
-        $stmt_inventory->bindValue(':quantity', $quantity);
-        $stmt_inventory->bindValue(':unit', $unit);
-        $stmt_inventory->bindValue(':description', 'Batch: ' . $batch);
-        if ($stmt_inventory->execute()) {
-            echo "Added in inventory successfully";
-        }
-    }
-
-    $stmt_status = $pdo->prepare("UPDATE production SET status = :status, updated_at = NOW() WHERE batch_id = :batch_id");
-    $stmt_status->bindValue(':batch_id', $_GET['batch']);
-    $stmt_status->bindValue(':status', $status);
-    $stmt_status->execute();
-
-    if ($status == 'Completed') {
-        $hist = $pdo->prepare("INSERT INTO history (user, user_role, action, ref_id, product, quantity, unit) VALUES (:user, :user_role, 'Completed Batch', :ref, :prod, :quan, :unit)");
-        $hist->execute([':user' => $_SESSION['user_name'] ?? '', ':user_role' => $_SESSION['user_role'] ?? '', ':ref' => $_GET['batch'], ':prod' => $item, ':quan' => $quantity, ':unit' => $unit]);
-    }
-
-    header("Location: ../production.php");
-}
+// NOTE: a legacy GET batch-completer lived here (state change by URL,
+// no double-Completed guard, no quantity validation, skipped the total
+// ledger, matched WHERE batch_id). Removed - the UI never called it and
+// updateBatch.php is the single completion path. Do not reintroduce
+// state-changing GET endpoints.
 
 // Batch ID generator: {Letter}{YYMMDD}_{NNN}{SS} (13 chars).
 // Letter rolls A->B->... after 999 sequences for that letter+day.

@@ -96,6 +96,7 @@ $userName = $_SESSION['user_name'] ?? '';
         <div class="user-role-badge"><?=htmlspecialchars(roleLabel($userRole))?></div>
         <?php if (!empty($_SESSION['user_id']) || (isset($id) && $id)): ?>
             <form action="php_backend/logout.php" method="POST" class="logout-form">
+                <?= csrf_field() ?>
                 <button type="submit" class="logout-btn">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     <span>Logout</span>

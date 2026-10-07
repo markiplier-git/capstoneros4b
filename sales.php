@@ -49,6 +49,7 @@ requireRole(['admin', 'inventory_staff']);
             </div>
             <div class="card-body">
                 <form method="POST" action="php_backend/import.php" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
                     <div class="form-row" style="align-items: center;">
 
                         <div class="form-group">
@@ -56,9 +57,8 @@ requireRole(['admin', 'inventory_staff']);
                             <input type="file" id="historyFile" accept=".json,.txt" name="historyFile" required>
                         </div>
                     </div>
-                    <p class="section-desc" style="margin: 8px 0 0;">Month/quantity pairs, ascending, closed months only, max 60 datas:
-                        <code>["2023-10", 25, "2023-11", 20]</code>.
-                        Upload first to preview coverage before anything is saved.</p>
+                    <p class="section-desc" style="margin: 8px 0 0;">Max 60 datas/month total. Proper Format:
+                        <code>["2023-10", 25, "2023-11", 20]</code>.</p>
                     <div style="margin-top: 14px;">
                         <button type="submit" class="btn-primary">Preview Import</button>
                     </div>
@@ -99,6 +99,7 @@ requireRole(['admin', 'inventory_staff']);
                         </div>
                     <?php endif; ?>
                     <form method="POST" action="php_backend/import.php">
+                        <?= csrf_field() ?>
                         <?php if ((int)$importPrev['conflicts'] > 0): ?>
                             <div class="form-group" style="margin-bottom: 12px;">
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">

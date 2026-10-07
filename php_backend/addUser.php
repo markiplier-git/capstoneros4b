@@ -1,13 +1,12 @@
 <?php 
 require_once "db.php";
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+require_once "csrf.php";
 # Admin-only endpoint - re-checked here because this URL is directly POSTable.
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
     header("Location: ../login.php");
     exit;
 }
+csrf_check();
 
 // One active account per role. Deactivated accounts free their slot.
 $MAX_PER_ROLE = 1;
@@ -25,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['username']) && isset($
         header("Location: ../users.php?error=" . urlencode("Invalid role"));
         exit;
     }
+    $is_admin = null;
 
     if ($password !== $password_confirm) {
         header("Location: ../users.php?error=" . urlencode("Passwords do not match"));

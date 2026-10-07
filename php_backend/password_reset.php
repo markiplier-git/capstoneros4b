@@ -4,9 +4,7 @@
 // db.php. All anti-spam lives here: per-user cooldown, hourly cap, hashed
 // single-use 10-minute codes bound to the requester IP.
 require_once "db.php";
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+require_once "csrf.php";
 require_once "mailer.php";
 
 header('Content-Type: application/json');
@@ -15,6 +13,7 @@ $op = $_POST['op'] ?? '';
 if (!in_array($op, ['request', 'verify', 'lastresort'], true)) {
     fail("Invalid request.");
 }
+csrf_check();
 
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 

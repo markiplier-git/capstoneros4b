@@ -484,6 +484,17 @@ General & Dashboard Notifications
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
+/* Action links inside the stock bands: inherit the band color, always
+   underlined so they read as links on every band tint. */
+#notif a,
+#dashboard-notif a,
+#prod-notif a {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 @keyframes alert-pulse-red {
     0% {
         transform: scale(1);

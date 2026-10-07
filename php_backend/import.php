@@ -3,6 +3,7 @@ require_once "session.php";
 require_once "db.php";
 
 requireRole(['admin', 'inventory_staff']);
+csrf_check();
 
 // Month-paired historical sales import. File shape (JSON array, alternating
 // month and quantity, ascending, closed months only, max 60 pairs):

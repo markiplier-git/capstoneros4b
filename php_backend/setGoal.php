@@ -2,6 +2,7 @@
 require_once "session.php";
 
 requireRole(['admin', 'inventory_staff']);
+csrf_check();
 
 if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['sales_goal'])) {
     $goal = (int)$_POST['sales_goal'];

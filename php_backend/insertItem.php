@@ -1,13 +1,18 @@
 <?php
 require_once "session.php";
 requireRole(['admin', 'inventory_staff']);
+csrf_check();
 
 // Update/Edit Total Stock: adjust the single-row `total` ledger.
 // direction=deduct removes the entered amount (floored at 0);
 // direction=add increases it. Inventory rows are fixed
 // production-tracking records and are never touched here.
 if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['quantity'])) {
-    $unit = $_POST['unit'];
+    $unit = $_POST['unit'] ?? '';
+    if (!in_array($unit, ['KG', 'Sacks'], true)) {
+        header("Location: ../inventory.php?error=1");
+        exit;
+    }
     $entered = round((float)($_POST['quantity'] ?? 0), 2);
     if($unit == 'KG') $entered = round($entered / 50, 2);
     $receiver = trim($_POST['description'] ?? '');

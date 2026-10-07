@@ -1,14 +1,13 @@
 <?php 
 require_once "db.php";
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+require_once "csrf.php";
 # Admin-only endpoint (users.php is admin-only, but this URL is directly
 # POSTable - re-check here with a backend-correct redirect target).
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
     header("Location: ../login.php");
     exit;
 }
+csrf_check();
 
 if($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['admin_email'])) {
     require_once "db.php";

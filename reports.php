@@ -811,6 +811,7 @@ if ($tab === 'forecast' && ($_GET['export'] ?? '') === 'csv') {
         $fcResult = null;
         $fcHistWarn = false;
         if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['fc-generate'])) {
+            csrf_check();
             $fcResult = runForecast($pdo, $fcProd);
             if (!$fcResult['thin']) {
                 try {
@@ -833,6 +834,7 @@ if ($tab === 'forecast' && ($_GET['export'] ?? '') === 'csv') {
             <div class="card-body">
                 <div class="search-bar">
                     <form method="POST" action="reports.php?tab=forecast" id="fc-report-filter-form">
+                        <?= csrf_field() ?>
                         <label for="fc-product">Fertilizer:</label>
                         <select id="fc-product" name="fc-product" required>
                             <?php foreach ($fcProdOpts as $p): ?>

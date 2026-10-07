@@ -54,6 +54,7 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                     </div>
                 <?php endif; ?>
                 <form method="POST" action="php_backend/addUser.php">
+                    <?= csrf_field() ?>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="username">Username</label>
@@ -191,12 +192,14 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                             <td>
                                 <?php if($user['status'] == 'active'): ?>
                                 <form method="POST" action="php_backend/editUsers.php" style="display: inline;">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="disable_id" value="<?=$user['id']?>">
                                     <button type="submit" class="btn-table-action" style="background: var(--color-danger);">Deactivate</button>
                                 </form>
                                 <?php endif; ?>
                                 <?php if($user['status'] == 'disabled'): ?>
                                 <form method="POST" action="php_backend/editUsers.php" style="display: inline;">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="enable_id" value="<?=$user['id']?>">
                                     <button type="submit" class="btn-table-action" style="background: var(--color-success);">Activate</button>
                                 </form>                                
@@ -226,6 +229,7 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                     <?php $apVerified = isset($_SESSION['ap_verified']) && (time() - (int) $_SESSION['ap_verified']) < 300; ?>
                         <?php if (!$apVerified): ?>
                             <form method="POST" action="php_backend/editUsers.php" style="margin-top: 8px;">
+                                <?= csrf_field() ?>
                                 <div class="form-group">
                                     <label for="admin-current">Current admin password</label>
                                     <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
@@ -241,6 +245,7 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                             </form>
                         <?php else: ?>
                             <form method="POST" action="php_backend/editUsers.php" style="margin-top: 8px;">
+                                <?= csrf_field() ?>
                                 <div class="form-group" style="margin-bottom: 12px;">
                                     <label for="ap-new">New Password</label>
                                     <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
@@ -275,6 +280,7 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                                     password.
                                     Current: <strong><?= htmlspecialchars($adminMailRow['email'] ?? '—') ?></strong></p>
                                 <form method="POST" action="php_backend/editUsers.php">
+                                    <?= csrf_field() ?>
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="admin-email">Email</label>
@@ -322,6 +328,7 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                     <div id="ud-status">—</div>
                 </div>
                 <form method="POST" action="php_backend/editUsers.php">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="reset_id" id="ud-id">
                     <div class="form-group" style="margin-bottom: 12px;">
                         <label for="ud-password">Change password</label>

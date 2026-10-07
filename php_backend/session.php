@@ -1,6 +1,7 @@
 <?php 
 require_once "db.php";
-if(session_status() == PHP_SESSION_NONE) session_start(); # To fetch the session.
+require_once "csrf.php";
+# To fetch the session.
 # Check if session if theres none then null.
 $id = $_SESSION['user_id'] ?? '';
 $user = $_SESSION['user_name'] ?? '';
@@ -10,6 +11,28 @@ if(!$id && !$user) {
     header("Location: login.php");
     exit;
 }
+
+# Absolute session lifetime (12h): old sessions are dropped even if active.
+if (isset($_SESSION['created_at']) && (time() - (int)$_SESSION['created_at']) > 43200) {
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit;
+}
+if (!isset($_SESSION['created_at'])) {
+    $_SESSION['created_at'] = time();
+}
+
+# Idle timeout (30 min): any request after 30 minutes without activity drops
+# the session. Prefix fits both root pages and php_backend endpoints.
+if (isset($_SESSION['last_activity']) && (time() - (int)$_SESSION['last_activity']) > 1800) {
+    session_unset();
+    session_destroy();
+    $idleBase = (basename(dirname($_SERVER['SCRIPT_NAME'] ?? '')) === 'php_backend') ? '../' : '';
+    header("Location: " . $idleBase . "login.php?error=" . urlencode("Session expired after 30 minutes of inactivity. Please log in again."));
+    exit;
+}
+$_SESSION['last_activity'] = time();
 
 
 # Fetch user id then check if status is disabled, if yes then header to login.php

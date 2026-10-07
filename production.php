@@ -108,6 +108,7 @@ if (!in_array($prodSort, ['newest', 'oldest', 'highest', 'lowest'], true)) {
             </div>
             <div class="card-body">
                 <form method="POST" action="php_backend/insertBatch.php" class="batch-form">
+                    <?= csrf_field() ?>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="item">Item</label>
@@ -488,6 +489,7 @@ if (!in_array($prodSort, ['newest', 'oldest', 'highest', 'lowest'], true)) {
         </div>
         <div class="dialog-body">
             <form method="POST" action="php_backend/updateBatch.php">
+                <?= csrf_field() ?>
                 <div class="form-group" style="margin-bottom: 16px;">
                     <label for="status_id">Status</label>
                     <select id="status_id" name="status" onchange="toggleQuantityField(this)">

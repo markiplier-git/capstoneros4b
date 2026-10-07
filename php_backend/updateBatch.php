@@ -1,6 +1,7 @@
 <?php 
 require_once "session.php";
 requireRole(['admin', 'production_staff']);
+csrf_check();
 
 if($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['status'])) {
     $status = $_POST['status'] ?? '';
@@ -8,6 +9,12 @@ if($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['status'])) {
     $quantity = $_POST['quantityIn'] ?? 0;
 
     if (!in_array($status, ['Ongoing', 'Completed', 'Cancel'], true) || $id === '') {
+        header("Location: ../production.php?error=1");
+        exit;
+    }
+    // A completed batch adds stock: reject missing, non-numeric or
+    // non-positive quantities (a negative would subtract from the ledger).
+    if ($status === 'Completed' && (!is_numeric($quantity) || (float)$quantity <= 0)) {
         header("Location: ../production.php?error=1");
         exit;
     }
