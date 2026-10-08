@@ -3,12 +3,17 @@ require_once "php_backend/session.php";
 
 requireRole(['admin']);
 
-// Handle success/error messages from redirects
+// Handle success/error messages from redirects. The kind comes from which
+// param carried it (?success= vs ?error=) - never from sniffing the text,
+// so any success wording renders green.
 $feedbackMessage = '';
+$feedbackKind = '';
 if (isset($_GET['success'])) {
     $feedbackMessage = htmlspecialchars($_GET['success']);
+    $feedbackKind = 'success';
 } elseif (isset($_GET['error'])) {
     $feedbackMessage = htmlspecialchars($_GET['error']);
+    $feedbackKind = 'error';
 }
 
 // User list search + filters (GET so they combine in the URL).
@@ -25,6 +30,13 @@ if (!in_array($filterStatus, ['all', 'active', 'disabled'], true)) {
 if (!in_array($userSort, ['newest', 'oldest'], true)) {
     $userSort = 'newest';
 }
+
+// Admin's own email for password reset (staff accounts have none -
+// their passwords are reset by the admin here instead).
+$adminMailStmt = $pdo->prepare("SELECT id, email FROM accounts WHERE admin = 1 LIMIT 1");
+$adminMailStmt->execute();
+$adminMailRow = $adminMailStmt->fetch(PDO::FETCH_ASSOC);
+$adminMailMissing = empty($adminMailRow['email']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,14 +54,21 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
             <h1>User Management</h1>
         </div>
 
+        <?php if ($adminMailMissing): ?>
+        <div class="feedback-error" style="background: rgba(254, 243, 199, 0.95); border: 1px solid #f59e0b; color: #b45309; margin-bottom: 18px;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span><strong>No Admin Email Yet</strong> — reset codes have nowhere to go. <a href="#admin-email-card" style="color: inherit; font-weight: 700;">Add Email</a></span>
+        </div>
+        <?php endif; ?>
+
         <div class="content-card addUser">
             <div class="card-header">
                 <h2><i class="fa-solid fa-user-plus"></i> Add New User</h2>
             </div>
             <div class="card-body">
                 <?php if ($feedbackMessage): ?>
-                    <div class="feedback-message" style="margin-bottom: 16px; padding: 12px 16px; border-radius: var(--radius-md); background: <?= (strpos($feedbackMessage, 'success') !== false || strpos($feedbackMessage, 'added') !== false) ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)' ?>; color: <?= (strpos($feedbackMessage, 'success') !== false || strpos($feedbackMessage, 'added') !== false) ? 'var(--color-success)' : 'var(--color-danger)' ?>; font-weight: 500; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid <?= (strpos($feedbackMessage, 'success') !== false || strpos($feedbackMessage, 'added') !== false) ? 'fa-circle-check' : 'fa-circle-exclamation' ?>"></i>
+                    <div class="feedback-message" style="margin-bottom: 16px; padding: 12px 16px; border-radius: var(--radius-md); background: <?= $feedbackKind === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)' ?>; color: <?= $feedbackKind === 'success' ? 'var(--color-success)' : 'var(--color-danger)' ?>; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid <?= $feedbackKind === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation' ?>"></i>
                         <?= $feedbackMessage ?>
                     </div>
                 <?php endif; ?>
@@ -92,11 +111,7 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
         </div> <!--Add user END-->
 
         <?php
-        // Admin's own email for password reset (staff accounts have none -
-        // their passwords are reset by the admin here instead).
-        $adminMailStmt = $pdo->prepare("SELECT id, email FROM accounts WHERE admin = 1 LIMIT 1");
-        $adminMailStmt->execute();
-        $adminMailRow = $adminMailStmt->fetch(PDO::FETCH_ASSOC);
+        // $adminMailRow loaded at the top for the missing-email banner.
         ?>
 
 
@@ -286,7 +301,7 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
         </div>
 
         <!-- Admin Email (Password Reset) -->
-        <div class="content-card">
+        <div class="content-card" id="admin-email-card">
             <div class="card-header">
                 <h2><i class="fa-solid fa-envelope"></i> Admin Email (Password Reset)</h2>
             </div>
