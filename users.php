@@ -223,9 +223,18 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                     </table>
                 </div>
             </div>
-            <div>
+        </div>
+        <!-- System users END-->
+
+        <!-- Admin Panel -->
+        <div class="content-card">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-key"></i> Admin Panel</h2>
+            </div>
+            <div class="card-body">
                 <details class="dialog-details">
-                    <summary class="summaries">Admin Panel</summary>
+                    <summary class="summaries">Change Password</summary>
+                    <div style="margin-top: 12px;">
                     <?php $apVerified = isset($_SESSION['ap_verified']) && (time() - (int) $_SESSION['ap_verified']) < 300; ?>
                         <?php if (!$apVerified): ?>
                             <form method="POST" action="php_backend/editUsers.php" style="margin-top: 8px;">
@@ -271,39 +280,41 @@ if (!in_array($userSort, ['newest', 'oldest'], true)) {
                                 </div>
                             </form>
                         <?php endif; ?>
-                        <div class="content-card">
-                            <div class="card-header">
-                                <h2><i class="fa-solid fa-envelope"></i> Admin Email (Password Reset)</h2>
-                            </div>
-                            <div class="card-body">
-                                <p class="section-desc" style="margin: 0 0 12px;">Reset codes go here if the admin forgets their
-                                    password.
-                                    Current: <strong><?= htmlspecialchars($adminMailRow['email'] ?? '—') ?></strong></p>
-                                <form method="POST" action="php_backend/editUsers.php">
-                                    <?= csrf_field() ?>
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="admin-email">Email</label>
-                                            <input type="email" id="admin-email" name="admin_email" placeholder="Enter admin email" 
-                                                required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="admin-email-confirm">Confirm Email</label>
-                                            <input type="email" id="admin-email-confirm" name="admin_email_confirm"
-                                                placeholder="Repeat admin email" autocomplete="off" required>
-                                        </div>
-                                    </div>
-                                    <div style="margin-top: 12px;">
-                                        <button type="submit" class="btn-primary"><i class="fa-solid fa-envelope"></i> Save Admin
-                                            Email</button>
-                                    </div>
-                                </form>
-                            </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <!-- Admin Email (Password Reset) -->
+        <div class="content-card">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-envelope"></i> Admin Email (Password Reset)</h2>
+            </div>
+            <div class="card-body">
+                <p class="section-desc" style="margin: 0 0 12px;">Reset codes go here if the admin forgets their
+                    password.
+                    Current: <strong><?= htmlspecialchars($adminMailRow['email'] ?? '—') ?></strong></p>
+                <form method="POST" action="php_backend/editUsers.php">
+                    <?= csrf_field() ?>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="admin-email">Email</label>
+                            <input type="email" id="admin-email" name="admin_email" placeholder="Enter admin email"
+                                required>
                         </div>
-                    </details>
-                </div>
-        </div> 
-        <!-- System users END-->
+                        <div class="form-group">
+                            <label for="admin-email-confirm">Confirm Email</label>
+                            <input type="email" id="admin-email-confirm" name="admin_email_confirm"
+                                placeholder="Repeat admin email" autocomplete="off" required>
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px;">
+                        <button type="submit" class="btn-primary"><i class="fa-solid fa-envelope"></i> Save Admin
+                            Email</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- User Details + password reset dialog -->
         <dialog id="user-diag">

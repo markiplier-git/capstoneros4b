@@ -28,8 +28,15 @@ function csrf_check() {
     $want = (string)($_SESSION['csrf_token'] ?? '');
     if ($sent === '' || $want === '' || !hash_equals($want, $sent)) {
         http_response_code(403);
-        die("Access denied: invalid request token. <a href='../login.php'>Continue</a>");
+        die("Access denied: invalid request token. <a href='" . appBase() . "login.php'>Continue</a>");
     }
+}
+
+// Path prefix back to the app root: '' from root pages, '../' from
+// php_backend/ endpoints. Every redirect/link out of shared code uses this
+// so neither context 404s.
+function appBase() {
+    return (basename(dirname($_SERVER['SCRIPT_NAME'] ?? '')) === 'php_backend') ? '../' : '';
 }
 
 // Hidden input for plain HTML forms.

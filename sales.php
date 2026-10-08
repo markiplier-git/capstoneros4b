@@ -110,10 +110,18 @@ requireRole(['admin', 'inventory_staff']);
                         <?php endif; ?>
                         <input type="hidden" name="confirm_import" value="1">
                         <button type="submit" class="btn-primary"><i class="fa-solid fa-file-import"></i> Confirm Import</button>
-                        <a href="php_backend/import.php?cancel_import=1" class="btn-secondary" style="text-decoration:none; margin-left: 8px;">Cancel</a>
+                    </form>
+                    <form method="POST" action="php_backend/import.php" style="display: inline;">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="cancel_import" value="1">
+                        <button type="submit" class="btn-secondary" style="margin-left: 8px;">Cancel</button>
                     </form>
                 <?php else: ?>
-                    <a href="php_backend/import.php?cancel_import=1" class="btn-secondary" style="text-decoration:none;">Dismiss</a>
+                    <form method="POST" action="php_backend/import.php" style="display: inline;">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="cancel_import" value="1">
+                        <button type="submit" class="btn-secondary">Dismiss</button>
+                    </form>
                 <?php endif; ?>
             </div>
         </div>

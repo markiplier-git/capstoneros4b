@@ -3,7 +3,7 @@ Sales -> Upload month-paired JSON (["YYYY-MM", qty, ...], ascending, closed mont
 
 Forecasting -> Type -> Generate Forecast -> Display Predicted demand for next full month. Needs 12 minimum months, uses 36 maximum months of complete monthly sales. Current month is never charted until it closes (table shows one text-only "(Need end of month)" placeholder row instead of a number).
 
-Production -> Create prod Batch -> Ongoing -> Update Batch Status to Completed (no delete; guarded against double-Completed). Completed batch goes to inventory with prod_id = batch_id and bumps the total ledger. Production staff + admin only.
+Production -> Create prod Batch -> Ongoing -> Update Batch Status to Completed (no delete; guarded against double-Completed). Completed batch goes to inventory with its own random 7-digit prod_id (never the batch_id; batch link lives in description) and bumps the total ledger. Production staff + admin only.
 
 Inventory -> View current stock, total produced, total released this month, & production today. Low-stock banner ends with Produce/Add links (same as dashboard). Production inflow vs Stock-Out bars (both Stock Added top-ups and deducts counted). Can Deduct total stock with 'Edit Total Stock', 'Add Total Stock' to increase it. Both write a history leg (Stock Deducted / Stock Added, ref TOTAL). Transactions card always shows, even on empty inventory.
 

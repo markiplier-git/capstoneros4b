@@ -8,7 +8,7 @@ $user = $_SESSION['user_name'] ?? '';
 $role =  $_SESSION['user_role'] ?? '';
 
 if(!$id && !$user) {
-    header("Location: login.php");
+    header("Location: " . appBase() . "login.php");
     exit;
 }
 
@@ -16,7 +16,7 @@ if(!$id && !$user) {
 if (isset($_SESSION['created_at']) && (time() - (int)$_SESSION['created_at']) > 43200) {
     session_unset();
     session_destroy();
-    header("Location: login.php");
+    header("Location: " . appBase() . "login.php");
     exit;
 }
 if (!isset($_SESSION['created_at'])) {
@@ -28,8 +28,7 @@ if (!isset($_SESSION['created_at'])) {
 if (isset($_SESSION['last_activity']) && (time() - (int)$_SESSION['last_activity']) > 1800) {
     session_unset();
     session_destroy();
-    $idleBase = (basename(dirname($_SERVER['SCRIPT_NAME'] ?? '')) === 'php_backend') ? '../' : '';
-    header("Location: " . $idleBase . "login.php?error=" . urlencode("Session expired after 30 minutes of inactivity. Please log in again."));
+    header("Location: " . appBase() . "login.php?error=" . urlencode("Session expired after 30 minutes of inactivity. Please log in again."));
     exit;
 }
 $_SESSION['last_activity'] = time();
@@ -43,7 +42,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 # Missing row (stale session, or the account was deleted): treat as logged
 # out instead of warning on array access of false.
 if(!$user || ($user['status'] ?? '') == 'disabled') {
-    header("Location: php_backend/logout.php");
+    header("Location: " . appBase() . "php_backend/logout.php");
     exit;
 }
 
@@ -53,13 +52,13 @@ $userFullName = $user['name'] ?? '';
 # Called on every/most page. Check if role is empty, and invalid
 function requireRole($allowed_roles) {
     if(!isset($_SESSION['user_id']) || !isset($_SESSION['user_role'])) {
-        header("Location: login.php");
+        header("Location: " . appBase() . "login.php");
         exit;
     }
 
     if(!in_array($_SESSION['user_role'], $allowed_roles)) {
     http_response_code(403);
-    die("Access denied: You do not have permission to view this page!" . "<br><a href='php_backend/logout.php'>Continue</a>");
+    die("Access denied: You do not have permission to view this page!" . "<br><a href='" . appBase() . "php_backend/logout.php'>Continue</a>");
     }
 }
 

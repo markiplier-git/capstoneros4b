@@ -12,8 +12,9 @@ csrf_check();
 // incomplete and block the import. A month with 0 counts but is flagged.
 // Flow is two-step: upload -> preview (stored in session) -> confirm.
 
-// Cancel a pending preview.
-if (isset($_GET['cancel_import'])) {
+// Cancel a pending preview (POST only - clearing session state still
+// counts as a state change, so no GET link).
+if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['cancel_import'])) {
     unset($_SESSION['import_preview']);
     header("Location: ../sales.php");
     exit;
