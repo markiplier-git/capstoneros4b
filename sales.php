@@ -98,7 +98,8 @@ requireRole(['admin', 'inventory_staff']);
                                 Tick overwrite to replace previously imported rows, or cancel.</span>
                         </div>
                     <?php endif; ?>
-                    <form method="POST" action="php_backend/import.php">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px;">
+                    <form method="POST" action="php_backend/import.php" style="margin: 0;">
                         <?= csrf_field() ?>
                         <?php if ((int)$importPrev['conflicts'] > 0): ?>
                             <div class="form-group" style="margin-bottom: 12px;">
@@ -111,11 +112,12 @@ requireRole(['admin', 'inventory_staff']);
                         <input type="hidden" name="confirm_import" value="1">
                         <button type="submit" class="btn-primary"><i class="fa-solid fa-file-import"></i> Confirm Import</button>
                     </form>
-                    <form method="POST" action="php_backend/import.php" style="display: inline;">
+                    <form method="POST" action="php_backend/import.php" style="margin: 0;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="cancel_import" value="1">
-                        <button type="submit" class="btn-secondary" style="margin-left: 8px;">Cancel</button>
+                        <button type="submit" class="btn-secondary">Cancel</button>
                     </form>
+                    </div>
                 <?php else: ?>
                     <form method="POST" action="php_backend/import.php" style="display: inline;">
                         <?= csrf_field() ?>
