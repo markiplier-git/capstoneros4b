@@ -121,8 +121,10 @@ if (!in_array($prodSort, ['newest', 'oldest', 'highest', 'lowest'], true)) {
                     </div>
                 </form>
                 <?php
-                // Recommended production for this month:
-                // forecasted stock-out minus Total Produced this month.
+                // Recommended production for this month: forecasted demand
+                // plus the safety-stock shortfall, minus what is already
+                // on hand and made this month. E.g. forecast 10, goal 5,
+                // stock 0 -> recommend 15.
                 $recText = 'No forecast yet - generate one in Forecasting to get a recommendation.';
                 try {
                     $recFc = $pdo->prepare("SELECT forecast_qty FROM forecasting_history ORDER BY id DESC LIMIT 1");
@@ -132,14 +134,14 @@ if (!in_array($prodSort, ['newest', 'oldest', 'highest', 'lowest'], true)) {
                         $recProd = $pdo->prepare("SELECT COALESCE(SUM(quantity), 0) FROM production WHERE status = 'Completed' AND YEAR(updated_at) = YEAR(CURDATE()) AND MONTH(updated_at) = MONTH(CURDATE())");
                         $recProd->execute();
                         $recMade = round((float)($recProd->fetchColumn() ?? 0), 2);
-                        $recGap = round((float)$recRow['forecast_qty'] - $recMade, 2);
+                        $recGap = round((float)$recRow['forecast_qty'] + $prodGoal - $prodStock - $recMade, 2);
                         $recFmt = function ($v) { return rtrim(rtrim(number_format((float) $v, 2, '.', ''), '0'), '.'); };
                         if ($recGap > 0) {
                             $recText = 'Recommended: <strong>' . $recFmt($recGap) . ' Sacks to produce this month.</strong>';
                         } elseif ($recGap == 0) {
                             $recText = '<strong>Sufficient.</strong>';
                         } else {
-                            $recText = '<strong>Current Stock exceeded forecasted by data by ' . $recFmt(abs($recGap)) . ' Sacks.</strong>';
+                            $recText = '<strong>Sufficient: stock covers the forecast and safety stock (surplus ' . $recFmt(abs($recGap)) . ' Sacks).</strong>';
                         }
                     }
                 } catch (Exception $e) {
