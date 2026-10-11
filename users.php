@@ -87,13 +87,20 @@ $adminMailMissing = empty($adminMailRow['email']);
                     <div class="form-row">
                         <div class="form-group">
                             <label for="password">Password</label>
-                            <input type="password" id="password" name="password" placeholder="Enter password" required>
+                            <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
+                                <input type="password" id="password" name="password" placeholder="Enter password" minlength="8" required style="flex:1;">
+                                <button type="button" class="btn-secondary" id="password-toggle" style="padding:8px 12px;" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="password-confirm">Confirm Password</label>
-                            <input type="password" id="password-confirm" name="password_confirm" placeholder="Repeat password" required>
+                            <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
+                                <input type="password" id="password-confirm" name="password_confirm" placeholder="Repeat password" minlength="8" required style="flex:1;">
+                                <button type="button" class="btn-secondary" id="password-confirm-toggle" style="padding:8px 12px;" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+                            </div>
                         </div>
                     </div>
+                    <p class="section-desc" style="margin: 0 0 12px;">Password standard: minimum 8 characters with at least 1 letter and 1 number. Common passwords are rejected.</p>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="role">Role</label>
@@ -405,8 +412,8 @@ $adminMailMissing = empty($adminMailRow['email']);
                 icon.className = 'fa-solid fa-eye';
             }
         });
-        // Show/hide toggles for the admin password fields.
-        [['admin-current', 'admin-current-toggle'], ['ap-new', 'ap-toggle-new'], ['ap-confirm', 'ap-toggle-confirm']].forEach(([inputId, btnId]) => {
+        // Show/hide toggles for the Add User password fields.
+        [['password', 'password-toggle'], ['password-confirm', 'password-confirm-toggle'], ['admin-current', 'admin-current-toggle'], ['ap-new', 'ap-toggle-new'], ['ap-confirm', 'ap-toggle-confirm']].forEach(([inputId, btnId]) => {
             const input = document.getElementById(inputId);
             const btn = document.getElementById(btnId);
             if (input && btn) {

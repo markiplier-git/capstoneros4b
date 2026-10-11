@@ -47,19 +47,54 @@ function adminTarget($pdo) {
     return $acct;
 }
 
+// Send throttling with escalating bans. Returns ['ok'], ['wait', $secs]
+// (60s cooldown) or ['ban', $mins]. Hitting the 5-sends/hour cap bans the
+// user 5 min, then 15, then 60 on repeat hits (level kept per user, old
+// bans decay after a day, success clears). Missing reset_bans table =
+// no bans enforced, other checks still run.
 function rateLimited($pdo, $username) {
+    $banLevel = 0;
+    try {
+        $stmt = $pdo->prepare("SELECT level, until FROM reset_bans WHERE user = :u");
+        $stmt->execute([':u' => $username]);
+        $ban = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $ban = false;
+    }
+    if ($ban) {
+        $until = strtotime($ban['until']);
+        if ($until > time()) {
+            return ['ban', (int)ceil(($until - time()) / 60)];
+        }
+        if ($until < time() - 86400) {
+            try {
+                $pdo->prepare("DELETE FROM reset_bans WHERE user = :u")->execute([':u' => $username]);
+            } catch (Exception $e) {
+            }
+            $ban = false;
+        }
+    }
+    if ($ban) {
+        $banLevel = (int)$ban['level'];
+    }
     $stmt = $pdo->prepare("SELECT MAX(created_at) FROM password_resets WHERE user = :u");
     $stmt->execute([':u' => $username]);
     $last = $stmt->fetchColumn();
     if ($last && (time() - strtotime($last)) < 60) {
-        return 60 - (time() - strtotime($last));
+        return ['wait', 60 - (time() - strtotime($last))];
     }
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM password_resets WHERE user = :u AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)");
     $stmt->execute([':u' => $username]);
     if ((int)$stmt->fetchColumn() >= 5) {
-        return -1; // hourly cap hit
+        $level = min($banLevel + 1, 3);
+        $mins = [1 => 5, 2 => 15, 3 => 60][$level];
+        try {
+            $pdo->prepare("INSERT INTO reset_bans (user, level, until) VALUES (:u, :l, DATE_ADD(NOW(), INTERVAL $mins MINUTE)) ON DUPLICATE KEY UPDATE level = :l2, until = DATE_ADD(NOW(), INTERVAL $mins MINUTE)")->execute([':u' => $username, ':l' => $level, ':l2' => $level]);
+        } catch (Exception $e) {
+        }
+        return ['ban', $mins];
     }
-    return 0;
+    return ['ok', 0];
 }
 
 function requestCode($pdo, $acct, $ip) {
@@ -68,11 +103,11 @@ function requestCode($pdo, $acct, $ip) {
         fail("No valid admin email is saved. Set one on User Management first.");
     }
     $wait = rateLimited($pdo, $username);
-    if ($wait > 0) {
-        fail("Wait $wait second(s) before requesting another code.");
+    if ($wait[0] === 'wait') {
+        fail("Wait {$wait[1]} second(s) before requesting another code.");
     }
-    if ($wait < 0) {
-        fail("Too many codes requested. Try again in an hour.");
+    if ($wait[0] === 'ban') {
+        fail("Too many codes requested. Try again in {$wait[1]} minute(s).");
     }
     // Close older unused codes so only the newest works.
     $pdo->prepare("UPDATE password_resets SET used = 1 WHERE user = :u AND used = 0")->execute([':u' => $username]);
@@ -150,6 +185,10 @@ function verifyCode($pdo, $acct, $ip) {
     }
     $pdo->prepare("UPDATE accounts SET pass = :p WHERE id = :id")->execute([':p' => password_hash($newPass, PASSWORD_ARGON2ID), ':id' => $acctRow['id']]);
     $pdo->prepare("UPDATE password_resets SET used = 1 WHERE user = :u")->execute([':u' => $username]);
+    try {
+        $pdo->prepare("DELETE FROM reset_bans WHERE user = :u")->execute([':u' => $username]);
+    } catch (Exception $e) {
+    }
     echo json_encode(['ok' => true, 'message' => 'Password reset. You can now log in.']);
     exit;
 }
@@ -159,11 +198,11 @@ function verifyCode($pdo, $acct, $ip) {
 // deletes accounts by itself.
 function lastResort($pdo, $username, $ip) {
     $wait = rateLimited($pdo, $username);
-    if ($wait > 0) {
-        fail("Wait $wait second(s) before sending another request.");
+    if ($wait[0] === 'wait') {
+        fail("Wait {$wait[1]} second(s) before sending another request.");
     }
-    if ($wait < 0) {
-        fail("Too many requests. Try again in an hour.");
+    if ($wait[0] === 'ban') {
+        fail("Too many requests. Try again in {$wait[1]} minute(s).");
     }
     require_once __DIR__ . '/.private/account.php';
     $backup = PrivateAccount::getTempEmail();
